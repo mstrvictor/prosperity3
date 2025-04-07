@@ -151,3 +151,9 @@ if __name__ == "__main__":
     
     profit, path = find_most_profitable_arbitrage(nodes, edges, start_node, max_trades=5)
     print(format_result(profit, path))
+
+
+
+
+# Most profitable arbitrage cycle: SEASHELLS -> SNOWBALLS -> NUGGETS -> PIZZAS -> SNOWBALLS -> SEASHELLS -> SEASHELLS
+# Profit multiplier: 1.088680x
