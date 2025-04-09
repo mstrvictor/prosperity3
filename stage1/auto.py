@@ -209,7 +209,7 @@ class MarketMakingStrategy(Strategy):
         # if we are in a position to buy and we need to liquidate KINDA BAD
         if to_buy > 0 and soft_liquidate:
             # put out a bunch of buy orders but we're not down bad on price
-            quantity = to_buy // 2
+            quantity = to_buy
             self.buy(true_value - 2, quantity)
             to_buy -= quantity
 
@@ -292,7 +292,6 @@ class Raph(Strategy):
 
 class Trader:
     def __init__(self):
-        logger.print("yo")
         limits = {
             "RAINFOREST_RESIN":50,
         }

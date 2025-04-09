@@ -1,0 +1,5 @@
+when remove the hard liquidate if conditions slightly better profit
+
+do you want to change strat depending on how long is left in the day? 
+
+maybe try some moving average strategy for others
