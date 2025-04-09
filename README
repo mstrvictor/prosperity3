@@ -1,0 +1,11 @@
+## Installation
+
+If the script './test' is not runnable 
+
+```bash
+chmod +x test
+```
+
+## Usage
+
+After updating auto.py run ./test and it will run the backtesting and save the logs and scripts
