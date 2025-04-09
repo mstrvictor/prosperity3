@@ -6,4 +6,11 @@ else
     { output=$(python3 ../imc-prosperity-3-backtester-master/prosperity3bt/__main__.py auto.py "$@"); }
 fi
 
+
+fname=$(echo "$output" | tail -n 1 | cut -d' ' -f6)
+bname=$(basename "$fname" | cut -d'.' -f1)
 echo "$output"
+echo "" 
+echo "Saved logs and script to backtests/output.log"
+
+mv "$fname" "backtests/output.log"
