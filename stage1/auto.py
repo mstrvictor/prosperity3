@@ -294,15 +294,11 @@ class Trader:
     def __init__(self):
         logger.print("yo")
         limits = {
-            "KELP":50,
             "RAINFOREST_RESIN":50,
-            "SQUID_INK": 50
         }
 
         self.strategies = {symbol: clazz(symbol, limits[symbol]) for symbol, clazz in {
             "RAINFOREST_RESIN": RainforestResinStrategy,
-            "KELP": Raph,
-            "SQUID_INK": Raph
         }.items()}
 
     def run(self, state: TradingState) -> tuple[dict[Symbol, list[Order]], int, str]:
