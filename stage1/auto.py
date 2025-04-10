@@ -155,6 +155,8 @@ class MarketMakingStrategy(Strategy):
 
         self.window = deque()
         self.window_size = 10
+        self.makeTrades = True
+
 
     @abstractmethod
     def get_true_value(state: TradingState) -> int:
@@ -162,6 +164,7 @@ class MarketMakingStrategy(Strategy):
     
     def act(self, state: TradingState) -> None:
         true_value = self.get_true_value(state)
+
 
         order_depth = state.order_depths[self.symbol]
         buy_orders = sorted(order_depth.buy_orders.items(), reverse=True)
@@ -194,7 +197,7 @@ class MarketMakingStrategy(Strategy):
         # go through all the price/volume in sell_orders
         for price, volume in sell_orders:
             # if we are in a position to buy and the price is right, buy
-            if to_buy > 0 and price <= max_buy_price:
+            if to_buy > 0 and price <= max_buy_price and self.makeTrades:
                 quantity = min(to_buy, -volume)
                 self.buy(price, quantity)
                 to_buy -= quantity
@@ -214,7 +217,7 @@ class MarketMakingStrategy(Strategy):
             to_buy -= quantity
 
         # if we are in a position to buy
-        if to_buy > 0:
+        if to_buy > 0 and self.makeTrades:
             # the "popular price" is the price corresponding to the order w/ the least orders
             # if the popular buy price is below our theo, go long
             popular_buy_price = max(buy_orders, key=lambda tup: tup[1])[0]
@@ -225,7 +228,7 @@ class MarketMakingStrategy(Strategy):
         for price, volume in buy_orders:
             # if we are in a position to sell and we can sell above our min
             # sell to all of these bids
-            if to_sell > 0 and price >= min_sell_price:
+            if to_sell > 0 and price >= min_sell_price and self.makeTrades:
                 quantity = min(to_sell, volume)
                 self.sell(price, quantity)
                 to_sell -= quantity
@@ -245,7 +248,7 @@ class MarketMakingStrategy(Strategy):
             to_sell -= quantity
 
         # if we are in a position to sell
-        if to_sell > 0:
+        if to_sell > 0 and self.makeTrades:
             # the "popular price" is the price corresponding to the order w/ the least orders
             # if the popular sell price is above ours, make this our theo
             popular_sell_price = min(sell_orders, key=lambda tup: tup[1])[0]
@@ -259,45 +262,91 @@ class MarketMakingStrategy(Strategy):
         self.window = deque(data)
 
 class RainforestResinStrategy(MarketMakingStrategy):
-    def get_true_value(self, state):
+    def get_true_value(self, state: TradingState):
         return 10_000
 
-class Raph(Strategy):
-    def __init__(self, symbol, limit):
-        super().__init__(symbol, limit)
-
-    def act(self, state: TradingState) -> None:
-        true_value = 2016
-
-        order_depth = state.order_depths[self.symbol]
-        buy_orders = sorted(order_depth.buy_orders.items(), reverse=True)
-        sell_orders = sorted(order_depth.sell_orders.items())
+class KelpStrategy(MarketMakingStrategy):
+    def get_true_value(self, state: TradingState):
+        # TradingState.position current position
+        # TradingState.observations 
+        # past prices or past information???
+        # state.market_trades
+        # market_trades: Dict[Symbol, List[Trade]], - TYPE
+        # TRADE TYPE
+        # Trade.symbol = symbol
+        # Trade.price: int = price
+        # Trade.quantity: int = quantity
+        # Trade.buyer = buyer
+        # Trade.seller = seller
+        # Trade.timestamp = timestamp
+        self.makeTrades = True
+        cur_time = state.timestamp
         
-        position = state.position.get(self.symbol, 0)
-        to_buy = self.limit - position
-        to_sell = self.limit + position
+        if len(state.market_trades) == 0 or "KELP" not in state.market_trades:
+            self.makeTrades = False
+            return 0
+            
+        temp = state.market_trades["KELP"] 
+        price_sum = 0
+        time_weight = 0
+        
+        for i in temp:
+            price_sum += i.price * i.quantity * ((cur_time - i.timestamp) / 100 + 1)
+            time_weight += ((cur_time - i.timestamp) / 100 + 1) * i.quantity
 
-        for price, volume in sell_orders:
-            if to_buy > 0 and price <= true_value:
-                quantity = min(to_buy, -volume)
-                self.buy(price, quantity)
-                to_buy -= quantity
+        if len(temp) < 2: self.makeTrades = False
+            
+        if time_weight == 0:
+            self.makeTrades = False
+            return 0
+        
+        logger.print((price_sum / time_weight))
+        return (price_sum / time_weight) + 0.13
+
+# class SquidInkStrategy(MarketMakingStrategy):
+#     def get_true_value(self, state: TradingState):
+#         return 2_150
+
+# class Raph(Strategy):
+#     def __init__(self, symbol, limit):
+#         super().__init__(symbol, limit)
+
+#     def act(self, state: TradingState) -> None:
+#         true_value = 2016
+
+#         order_depth = state.order_depths[self.symbol]
+#         buy_orders = sorted(order_depth.buy_orders.items(), reverse=True)
+#         sell_orders = sorted(order_depth.sell_orders.items())
+        
+#         position = state.position.get(self.symbol, 0)
+#         to_buy = self.limit - position
+#         to_sell = self.limit + position
+
+#         for price, volume in sell_orders:
+#             if to_buy > 0 and price <= true_value:
+#                 quantity = min(to_buy, -volume)
+#                 self.buy(price, quantity)
+#                 to_buy -= quantity
                 
-        for price, volume in buy_orders:
-            if to_sell > 0 and (price >= true_value):
-                quantity = min(to_sell, volume)
-                self.sell(price, quantity)
-                to_sell -= quantity
+#         for price, volume in buy_orders:
+#             if to_sell > 0 and (price >= true_value):
+#                 quantity = min(to_sell, volume)
+#                 self.sell(price, quantity)
+#                 to_sell -= quantity
 
 
 class Trader:
     def __init__(self):
         limits = {
             "RAINFOREST_RESIN":50,
+            "KELP":50,
+            "SQUID_INK": 50,
         }
 
         self.strategies = {symbol: clazz(symbol, limits[symbol]) for symbol, clazz in {
             "RAINFOREST_RESIN": RainforestResinStrategy,
+            "KELP": KelpStrategy,
+            # "SQUID_INK": SquidInkStrategy,
         }.items()}
 
     def run(self, state: TradingState) -> tuple[dict[Symbol, list[Order]], int, str]:
@@ -322,4 +371,5 @@ class Trader:
 
         logger.flush(state, orders, conversions, trader_data)
         return orders, conversions, trader_data
+    
     
