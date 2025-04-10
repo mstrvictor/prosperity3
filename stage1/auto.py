@@ -156,6 +156,10 @@ class MarketMakingStrategy(Strategy):
         self.window = deque()
         self.window_size = 10
         self.makeTrades = True
+        self.mAShort = deque()
+        self.mAShort_size = 5
+        self.mALong = deque()
+        self.mALong_size = 20
 
 
     @abstractmethod
@@ -181,6 +185,16 @@ class MarketMakingStrategy(Strategy):
         if len(self.window) > self.window_size:
             self.window.popleft()
 
+        #MA's
+        # self.mAShort.append(state.observations.plainValueObservations["KELP"].bidPrice)
+        # if len(self.mAShort) > self.mAShort_size:
+        #     self.mAShort.popleft()
+
+        # self.mALong.append(state.observations.plainValueObservations["KELP"].bidPrice)
+        # if len(self.mALong) > self.mALong_size:
+        #     self.mALong.popleft()
+
+        
         ### define liquidity actions
         # if we've observed 10 periods AND 5 of these times we've been at our limit AND the most recent period was at the limit
         soft_liquidate = len(self.window) == self.window_size and sum(self.window) >= self.window_size / 2 and self.window[-1]
@@ -279,6 +293,7 @@ class KelpStrategy(MarketMakingStrategy):
         # Trade.buyer = buyer
         # Trade.seller = seller
         # Trade.timestamp = timestamp
+
         self.makeTrades = True
         cur_time = state.timestamp
         
